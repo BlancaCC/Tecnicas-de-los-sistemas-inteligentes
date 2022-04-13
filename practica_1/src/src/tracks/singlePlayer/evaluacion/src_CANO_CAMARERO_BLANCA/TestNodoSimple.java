@@ -8,11 +8,11 @@ import ontology.Types.ACTIONS;
 public class TestNodoSimple {
     public static void main(String[] args) {
         // Creamos nodo con origen 
-        NodoSimple inicial = new  NodoSimple(0.1,1.1); 
-        NodoSimple sucesor = new NodoSimple(1.1,1.1,inicial.historialPasos, ACTIONS.ACTION_DOWN );
-        NodoSimple ss = new NodoSimple(3.0, 4.0, sucesor.historialPasos, ACTIONS.ACTION_LEFT);
+        NodoSimple inicial = new  NodoSimple(0,1); 
+        NodoSimple sucesor = new NodoSimple(1,11,inicial.historialPasos, ACTIONS.ACTION_DOWN );
+        NodoSimple ss = new NodoSimple(3,2, sucesor.historialPasos, ACTIONS.ACTION_LEFT);
         System.out.println(ss.historialPasos);
-        System.out.format("The coordinates are x: %f , y: %f",ss.coordenadas.x, ss.coordenadas.y); 
+        System.out.format("The coordinates are x: %f , y: %f",ss.x, ss.y); 
 
         ArrayList<ArrayList<Integer>> posiciones = new ArrayList<>();
         posiciones.add(new ArrayList<>(List.of(0,-1))); // arriba 

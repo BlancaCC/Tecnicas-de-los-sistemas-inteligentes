@@ -1,13 +1,10 @@
 package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Stack;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -15,26 +12,41 @@ import core.player.AbstractPlayer;
 import ontology.Types;
 import ontology.Types.ACTIONS;
 import tools.ElapsedCpuTimer;
-import tools.Pair;
 import tools.Vector2d;
 
+/**
+ * Resuelve el mapa implementando el método de búsqueda en anchura 
+ */
 public class AgenteBFS extends AbstractPlayer  {
     public int num_actions;
     public Types.ACTIONS[] actions;
     
 	Vector2d fescala;
-	Vector2d portal_coordenadas;
 	Vector2d avatar_coordenadas;
+	Boolean planCalculado = false;
+	int portal_x ;
+	int portal_y;
 	
 	//ArrayList con el plan a seguir
-	private Stack<Types.ACTIONS> plan = new Stack<Types.ACTIONS>();
+	private Queue<Types.ACTIONS> plan = new LinkedList<>();
 
     // True si el nodo se puede explorar, false si no, 
 	//si no está en el diccionario también se podrá visitar
-    private HashMap<Vector2d, Boolean> visitable = new  HashMap<>();
+    private Boolean [][] visitable;
 	
-	//Contador de las llamadas al método act
-	int num_llamadas=0;
+	// límites superiores del mapa 
+	Vector2d limite_mapa; 
+
+	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
+	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
+	ArrayList<Types.ACTIONS> acciones = new ArrayList<>(
+			List.of(
+				Types.ACTIONS.ACTION_UP,
+				Types.ACTIONS.ACTION_DOWN,
+				Types.ACTIONS.ACTION_LEFT,
+				Types.ACTIONS.ACTION_RIGHT
+			)
+		);
 	
 	/**
 	 * initialize all variables for the agent
@@ -49,29 +61,36 @@ public class AgenteBFS extends AbstractPlayer  {
         //Se crea una lista de observaciones de portales, ordenada por cercania al avatar
         ArrayList<Observation>[] posiciones = stateObs.getPortalsPositions(stateObs.getAvatarPosition());
         //Seleccionamos coordenadas del Portal
-        portal_coordenadas = posiciones[0].get(0).position;
-        portal_coordenadas.x = Math.floor(portal_coordenadas.x / fescala.x);
-        portal_coordenadas.y = Math.floor(portal_coordenadas.y / fescala.y);
-
+        Vector2d portal_coordenadas= posiciones[0].get(0).position;
+        portal_x = (int) Math.floor(portal_coordenadas.x / fescala.x);
+		portal_y = (int) Math.floor(portal_coordenadas.y / fescala.y);
+		
 		//Posición del avatar en coordenadas
         avatar_coordenadas = new Vector2d( 
 			stateObs.getAvatarPosition().x / fescala.x,
       		stateObs.getAvatarPosition().y / fescala.y
 		);
+		// Límites del mapa 
+		limite_mapa = new Vector2d(
+			stateObs.getObservationGrid().length - 1,
+			stateObs.getObservationGrid()[0].length-1
+		);
+		int limite_mapa_x = stateObs.getObservationGrid().length;
+		int limite_mapa_y = stateObs.getObservationGrid()[0].length;
+        // a priori todo los sitios son visitables, lo indicamos
+		visitable = new Boolean[limite_mapa_x][limite_mapa_y];
+		for(int x = 0; x <= limite_mapa.x; x++){
+			Arrays.fill(visitable[x], true );
+		}
+		// Marcamos lo muros y trampas 
         
-        //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
-        ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
-        for (int j=0; j <=1; j++)
-        for (int i = 0; i < obstaculos[j].size(); i++){
-            //Obtenemos la posición de cada uno
-			Vector2d obstaculos_coordenadas = new Vector2d(
-				Math.floor(obstaculos[0].get(i).position.x / fescala.x), 
-            	Math.floor(obstaculos[0].get(i).position.y / fescala.y)
-				);
-            visitable.put(obstaculos_coordenadas, false );
-        }
-      
+		// añadimos desplazamientos a calcular 
+		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
+		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
+		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
+		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
 
+		
 	}
 
 	/*
@@ -91,16 +110,14 @@ public class AgenteBFS extends AbstractPlayer  {
 	 * @param coordenadas 
 	 * @return si es visitable o no
 	 */
-	public Boolean esVisitable(Vector2d coordenadas){
-		Boolean dentro_mapa = coordenadas.x >= 0 
-		&& coordenadas.y >= 0 
-		&& coordenadas.x <= stateObs.getObservationGrid().length - 1
-		&& coordenadas.y <= stateObs.getObservationGrid()[0].length-1
-
-		)
+	public Boolean esVisitable(int x, int y){
+		Boolean dentro_mapa = (x >= 0 
+		&& y >= 0 
+		&& x <= limite_mapa.x
+		&& y <= limite_mapa.y
+		);
 		return dentro_mapa && ( // está dentro del mapa 
-			!(visitable.containsKey(coordenadas))  // no se ha marcado como ya visitado 
-			|| visitable.get(coordenadas) // se ha incluido pero no está 
+			visitable[x][y]==true // 
 		);
 	}
 
@@ -118,48 +135,64 @@ public class AgenteBFS extends AbstractPlayer  {
 	public ArrayList<NodoSimple> calculaSucesores(NodoSimple nodo) {
 
 		ArrayList<NodoSimple> sucesores= new ArrayList<>();
-
-		// Creamos vectores auxiliares para simplificar proceso 
-		ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
-        desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
-        desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
-        desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
-        desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
-
-		ArrayList<Types.ACTIONS> acciones = new ArrayList<>(
-			List.of(
-				Types.ACTIONS.ACTION_UP,
-				Types.ACTIONS.ACTION_DOWN,
-				Types.ACTIONS.ACTION_LEFT,
-				Types.ACTIONS.ACTION_RIGHT
-			)
-		);
-
 		for(int i=0; i<4; i++) {
-			Vector2d coordenadas_sucesor = new Vector2d(
-				 nodo.coordenadas.x + desplazamiento.get(i).get(0),
-				 nodo.coordenadas.y + desplazamiento.get(i).get(1)
-			);
-			if( esVisitable(coordenadas_sucesor)) {
+			int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
+			int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
+
+			if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
     			sucesores.add(
 					new NodoSimple(
-						nodo.coordenadas.x, nodo.coordenadas.y,
+						coordenada_x_sucesor, coordenada_y_sucesor,
 						nodo.historialPasos, 
 						acciones.get(i)
 					)
 				);
 			}
-		}
-	 		
+		}		
 		return sucesores;
 	}
+	/** 
+	 * Genera el plan a seguir 
+	 * lo que hace es añadir el plan a la variable  privada plan 
+	 * El plan se genera mediante una búsqueda en anchura, es por ello que la estructura que almacena 
+	 * el plan sea una cola 
+	 * devuelve true si se encuentra 
+	 */
+	private  boolean generarPlanBFS(){
+		NodoSimple posicion_actual = new NodoSimple(
+			avatar_coordenadas.x,
+			avatar_coordenadas.y
+		);
+		if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+			plan = posicion_actual.historialPasos;
+			return true;
+		}
+		// se supone que el portal es distinto a la posición inicial 
+		Queue <NodoSimple> pendientesExplorar = new LinkedList<>();
+		
+		for (NodoSimple n :calculaSucesores(posicion_actual)){
+			pendientesExplorar.add(n);
+			visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+		}
+		while ( !pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
 
-	
-	// ----- Antiguo ------
+			posicion_actual = pendientesExplorar.poll();
+			
+			if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+				plan = posicion_actual.historialPasos;
+				return true;
+			}
+			
+			for (NodoSimple n :calculaSucesores(posicion_actual)){
+				pendientesExplorar.add(n);
+				visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+			}
+		}
 
-
+		return false; 
+	}
 	/**
-	 * return the best action to arrive faster to the closest portal
+	 * Return the best action to arrive faster to the closest portal
 	 * @param stateObs Observation of the current state.
      * @param elapsedTimer Timer when the action returned is due.
 	 * @return best	ACTION to arrive faster to the closest portal
@@ -167,70 +200,15 @@ public class AgenteBFS extends AbstractPlayer  {
 	@Override
 	public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
-        if(num_llamadas==0) {
+        if(planCalculado  == false) {
         	//Llamamos al plan con la información del lugar dónde se encuentran los muros
-        	plan=planBFS(avatar,portal,muros_y_pinchos,stateObs);
-        	num_llamadas++;
-    		return plan.pop();
+        	generarPlanBFS();
+        	planCalculado = true;
+			System.out.println(plan);
+    		return plan.poll();
         }else {
-    		return plan.pop();
-        }
-        	
+    		return plan.poll();
+        }   
+		  	
 	}
-
-	/**
-	 * Devuelve el plan de acción del agente para el resto de ejecuciones.
-	 * @param nodo_inicio Nodo del que partimos para construir el plan.
-	 * @param nodo_final Nodo al que queremos llegar.
-	 * @param muros Array con los objetos inmóviles del mapa.
-	 * @param stateObs Observation of the current state.
-	 * @return pila con el plan a seguir por el agente.
-	 */
-	public Stack<Types.ACTIONS> planBFS(
-        Nodo nodo_inicio, 
-        Nodo nodo_final, 
-        ArrayList<Nodo> muros,
-        StateObservation stateObs){
-		Nodo nodo_actual;
-		Stack<Types.ACTIONS> plan= new Stack<Types.ACTIONS>();
-		Hashtable<Double,Boolean> estado= new Hashtable<Double,Boolean>();
-		//Marcamos el nodo inicial como visitado
-		estado.put(nodo_inicio.id, true);
-		Queue<Nodo> cola=new LinkedList<>();
-		ArrayList<Nodo> sucesores= new ArrayList<>();
-		
-		//Metemos en la cola el nodo inicial
-		cola.add(nodo_inicio);
-		
-		while(!cola.isEmpty()){
-			nodo_actual=cola.peek();
-			cola.remove();
-			
-			if(nodo_actual.coordenadas.equals(nodo_final.coordenadas)){
-				System.out.println("calculamos el plan");
-				return nodo_actual.calculaCamino();
-			}
-			
-			sucesores=calculaSucesores(nodo_actual,muros,stateObs);
-			for(int i=0;i<sucesores.size();i++) {
-				if (!estado.containsKey(sucesores.get(i).id)) {
-					estado.put(sucesores.get(i).id,true);
-					sucesores.get(i).padre=nodo_actual;
-					//visitados.add(sucesores.get(i));
-					cola.add(sucesores.get(i));
-				}
-				
-			}
-			
-		}
-		
-		return plan;	
-	}
-	
-	
-
-
-
-
-
 }

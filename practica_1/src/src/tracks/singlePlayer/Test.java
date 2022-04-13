@@ -13,6 +13,8 @@ import tracks.ArcadeMachine;
 public class Test {
 
     public static void main(String[] args) {
+		// Mis track
+		String BFSController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteBFS";
 
 		// Available tracks:
 		String sampleRandomController = "tracks.singlePlayer.simple.sampleRandom.Agent";
@@ -34,8 +36,10 @@ public class Test {
 		int seed = new Random().nextInt();
 
 		// Game and level to play
-		int gameIdx = 0;
-		int levelIdx = 0; // level names from 0 to 4 (game_lvlN.txt).
+		int gameIdx = 58;
+		int levelIdx = 100; // level names from 0 to 4 (game_lvlN.txt).
+		// a partir 100 son los mío 
+		// se añaden en la carpeta gridphysics
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];
 		String level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
@@ -46,10 +50,12 @@ public class Test {
 						// executed. null if not to save.
 
 		// 1. This starts a game, in a level, played by a human.
-		ArcadeMachine.playOneGame(game, level1, recordActionsFile, seed);
+// 		// ArcadeMachine.playOneGame(game, level1, recordActionsFile, seed);
 
+		// CAMBIAR AQUÍ LO DE CAMBIAR EL NIVEL 
 		// 2. This plays a game in a level by the controller.
-//		ArcadeMachine.runOneGame(game, level1, visuals, sampleRHEAController, recordActionsFile, seed, 0);
+		ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
+		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
 
 
 		// 3. This replays a game from an action file previously recorded
