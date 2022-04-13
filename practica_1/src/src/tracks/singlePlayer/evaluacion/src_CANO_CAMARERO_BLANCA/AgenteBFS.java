@@ -20,7 +20,6 @@ import tools.Vector2d;
 public class AgenteBFS extends AbstractPlayer  {
     public int num_actions;
     public Types.ACTIONS[] actions;
-    
 	Vector2d fescala;
 	Vector2d avatar_coordenadas;
 	Boolean planCalculado = false;
@@ -87,23 +86,19 @@ public class AgenteBFS extends AbstractPlayer  {
          //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
          ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
 		 int x,y; 
-         for (int j=0; j <=1; j++)
+         for (int j=0; j <=1; j++) // muros y pinchos
          for (int i = 0; i < obstaculos[j].size(); i++){
              //Obtenemos la posición de cada uno
- 				x = (int)Math.floor(obstaculos[0].get(i).position.x / fescala.x);
-             	y = (int)Math.floor(obstaculos[0].get(i).position.y / fescala.y);
+ 				x = (int)Math.floor(obstaculos[j].get(i).position.x / fescala.x);
+             	y = (int)Math.floor(obstaculos[j].get(i).position.y / fescala.y);
  				
              visitable[x][y]=false;
-         }
-
-        
+         }  
 		// añadimos desplazamientos a calcular 
 		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
 		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
 		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
-		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
-
-		
+		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha	
 	}
 
 	/*
@@ -217,6 +212,7 @@ public class AgenteBFS extends AbstractPlayer  {
         	//Llamamos al plan con la información del lugar dónde se encuentran los muros
         	generarPlanBFS();
         	planCalculado = true;
+
     		return plan.poll();
         }else {
     		return plan.poll();

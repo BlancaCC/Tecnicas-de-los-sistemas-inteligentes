@@ -37,8 +37,9 @@ public class Test {
 
 		// Game and level to play
 		int gameIdx = 58;
-		int levelIdx = 100; // level names from 0 to 4 (game_lvlN.txt).
+		int levelIdx = 8; // level names from 0 to 4 (game_lvlN.txt).
 		// a partir 100 son los mío 
+		// dle 5 al 8 son los del examen 
 		// se añaden en la carpeta gridphysics
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];
