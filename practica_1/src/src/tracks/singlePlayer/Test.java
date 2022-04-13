@@ -15,6 +15,7 @@ public class Test {
     public static void main(String[] args) {
 		// Mis track
 		String BFSController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteBFS";
+		String DFSController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteDFS";
 
 		// Available tracks:
 		String sampleRandomController = "tracks.singlePlayer.simple.sampleRandom.Agent";
@@ -37,7 +38,7 @@ public class Test {
 
 		// Game and level to play
 		int gameIdx = 58;
-		int levelIdx = 8; // level names from 0 to 4 (game_lvlN.txt).
+		int levelIdx = 7; // level names from 0 to 4 (game_lvlN.txt).
 		// a partir 100 son los mío 
 		// dle 5 al 8 son los del examen 
 		// se añaden en la carpeta gridphysics
@@ -55,7 +56,9 @@ public class Test {
 
 		// CAMBIAR AQUÍ LO DE CAMBIAR EL NIVEL 
 		// 2. This plays a game in a level by the controller.
-		ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
+		ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
+
+		//ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
 
 
