@@ -83,6 +83,19 @@ public class AgenteBFS extends AbstractPlayer  {
 			Arrays.fill(visitable[x], true );
 		}
 		// Marcamos lo muros y trampas 
+
+         //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
+         ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
+		 int x,y; 
+         for (int j=0; j <=1; j++)
+         for (int i = 0; i < obstaculos[j].size(); i++){
+             //Obtenemos la posición de cada uno
+ 				x = (int)Math.floor(obstaculos[0].get(i).position.x / fescala.x);
+             	y = (int)Math.floor(obstaculos[0].get(i).position.y / fescala.y);
+ 				
+             visitable[x][y]=false;
+         }
+
         
 		// añadimos desplazamientos a calcular 
 		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
@@ -204,7 +217,6 @@ public class AgenteBFS extends AbstractPlayer  {
         	//Llamamos al plan con la información del lugar dónde se encuentran los muros
         	generarPlanBFS();
         	planCalculado = true;
-			System.out.println(plan);
     		return plan.poll();
         }else {
     		return plan.poll();
