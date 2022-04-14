@@ -2,6 +2,8 @@ package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.Vector;
 
+import javax.swing.text.AsyncBoxView;
+
 import ontology.Types;
 import ontology.Types.ACTIONS;
 
@@ -84,17 +86,19 @@ public class NodoEstrella implements Comparable<NodoEstrella>{
 	 * @param n Nodo con el que comparar
 	 * @return devuelve 0 si son iguales, -1 si this es mayor y 1 en caso contrario
      * 
-     * El criterio es primer f, en caso de igualdad por las g, y en caso de igualdad por el nodo expandido
+     * El criterio es primer f, en caso de igualdad por las g (la que sea may), y en caso de igualdad por el nodo expandido
 	 */
 	@Override
 	public int compareTo(NodoEstrella n ) {
-        int valorComparacion = (int) Math.signum(n.f - f);
+        int valorComparacion = (int) Math.signum(-n.f +f);
         if(valorComparacion == 0){
-            valorComparacion = (int) Math.signum(n.g - g);
+            valorComparacion = (int) Math.signum(-n.g + g);
             if(valorComparacion == 0){
                 int prioridad_propia = prioridadAccion(historialPasos.lastElement());
                 int prioridad_n = prioridadAccion(n.historialPasos.lastElement());
-                valorComparacion = (int) Math.signum(prioridad_n - prioridad_propia);
+                //signo debería ir al revés
+                valorComparacion = (int) Math.signum(-prioridad_n + prioridad_propia);
+ 
             }
         }
         return valorComparacion;
@@ -141,6 +145,17 @@ public class NodoEstrella implements Comparable<NodoEstrella>{
                 System.out.print("Error en prioridad action, no se ha encontrado");
                 System.out.println(action);
         }
-    return prioridad;
+        return prioridad;
+    }
+    /**
+     * Sobrecarga del método para mostrarlo en pantalla 
+     */
+    public String toString() {
+        return "x: " + Integer.toString(x) 
+                + ", y: " + Integer.toString(y)
+                + ", f(n)= " +Integer.toString(f)
+                + ", g(n)" + Integer.toString(g)
+                + ", h: " + Integer.toString(h)
+                ;
     }
 }
