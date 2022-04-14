@@ -40,14 +40,13 @@ public class AgenteDFS extends AbstractPlayer  {
 	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
 	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
 	ArrayList<Types.ACTIONS> acciones = new ArrayList<>(
-			List.of(
-				Types.ACTIONS.ACTION_UP,
-				Types.ACTIONS.ACTION_DOWN,
-				Types.ACTIONS.ACTION_LEFT,
-				Types.ACTIONS.ACTION_RIGHT
-			)
-		);
-	
+		List.of(
+			Types.ACTIONS.ACTION_RIGHT,
+			Types.ACTIONS.ACTION_LEFT,
+			Types.ACTIONS.ACTION_DOWN,
+			Types.ACTIONS.ACTION_UP	
+		)
+	);
 	/**
 	 * initialize all variables for the agent
 	 * @param stateObs Observation of the current state.
@@ -94,12 +93,12 @@ public class AgenteDFS extends AbstractPlayer  {
              	y = (int)Math.floor(obstaculos[j].get(i).position.y / fescala.y);
  				
              visitable[x][y]=false;
-         }  
+         } 
 		// añadimos desplazamientos a calcular  (notemos que el orden de lectura será el de abajo arriba)
 		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
 		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
 		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
-		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 	
+		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba  	
 	}
 
 	/*
