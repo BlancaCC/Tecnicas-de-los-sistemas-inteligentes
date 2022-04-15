@@ -83,7 +83,7 @@ public class AgenteAStar extends AbstractPlayer {
 		esta_abierto = new Boolean[limite_mapa_x][limite_mapa_y];
 		visitable = new Boolean[limite_mapa_x][limite_mapa_y];
 		coste_g = new int [limite_mapa_x][limite_mapa_y];
-		for (int x = 0; x <= limite_mapa_x; x++) {
+		for (int x = 0; x < limite_mapa_x; x++) {
 			Arrays.fill(esta_cerrado[x], false);
 			Arrays.fill(esta_abierto[x], false);
 			Arrays.fill(visitable[x], true);
