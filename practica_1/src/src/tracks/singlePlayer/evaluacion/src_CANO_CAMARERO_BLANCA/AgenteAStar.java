@@ -6,8 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Stack;
-import java.util.Vector;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -51,7 +49,11 @@ public class AgenteAStar extends AbstractPlayer {
 					Types.ACTIONS.ACTION_UP,
 					Types.ACTIONS.ACTION_DOWN,
 					Types.ACTIONS.ACTION_LEFT,
-					Types.ACTIONS.ACTION_RIGHT));
+					Types.ACTIONS.ACTION_RIGHT)
+	);
+	// Métricas que mostrar en pantalla 
+	int nodos_expandidos = 0;
+	int maximo_nodos_en_memoria = 0;
 
 	/**
 	 * initialize all variables for the agent
@@ -159,6 +161,7 @@ public class AgenteAStar extends AbstractPlayer {
 		esta_abierto[avatar_coordenadas_x][avatar_coordenadas_y] = true;
 		coste_g[avatar_coordenadas_x][avatar_coordenadas_y] = 0;
 		NodoEstrella candidato; 
+		int nodos_en_memoria = 2; // se inicia a dos porque nada más comenzar se resta 1
 
 		while(true){
 			// como no borramos las actualizaciones, solo tomamos como bueno si 
@@ -168,7 +171,9 @@ public class AgenteAStar extends AbstractPlayer {
 					return false;
 				}
 				candidato = abiertos.poll();
+				nodos_en_memoria--; // métrica de nodo que se quita
 			}while(esta_abierto[candidato.x][candidato.y] == false);
+			nodos_expandidos++; // métrica de que se expande un nodo nuevo
 			// puede producir a error si abierto está vacío 
 			//actualizamos estado 
 			esta_abierto[candidato.x][candidato.y] = false;
@@ -203,6 +208,8 @@ public class AgenteAStar extends AbstractPlayer {
 							acciones.get(i));
 							// añadimos a abiertos
 							abiertos.add(sucesor);
+							// métrica nodo en memoria
+							nodos_en_memoria++;
 							// actualizamos coste y estado
 							coste_g[sucesor_x][sucesor_y] = sucesor.g;
 							esta_abierto[sucesor_x][sucesor_y] = true;
@@ -219,9 +226,13 @@ public class AgenteAStar extends AbstractPlayer {
 								portal_x, portal_y, candidato, 
 								acciones.get(i))
 							);
+							// métrica nodo en memoria
+							nodos_en_memoria++;
 						}
 					
 					}
+					// Actualizamos métrica
+					maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);
 				}
 			}
 		}
@@ -238,9 +249,19 @@ public class AgenteAStar extends AbstractPlayer {
 	public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
 		if (planCalculado == false) {
-			// Llamamos al plan con la información del lugar dónde se encuentran los muros
-			planCalculado = generarPlanAEstrella();
-			System.out.print(plan);
+			long tiempo_inicio = System.nanoTime();
+        	planCalculado = generarPlanAEstrella();
+        	long tiempo_fin = System.nanoTime();
+			//calculamos tiempo de ejecución
+    		double runtime = (double)((tiempo_fin - tiempo_inicio))/1000000;
+    		//Calculamos el tamaño del plan
+    		int tam_plan = plan.size();
+
+			//Mostramos los valores para rellenar la tabla
+        	System.out.println("Runtime: "+runtime);
+        	System.out.println("Tamaño ruta calculada: "+tam_plan);
+        	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
+        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
 			return plan.poll();
 		} else {
 			return plan.poll();
