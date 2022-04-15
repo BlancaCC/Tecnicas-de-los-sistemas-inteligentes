@@ -28,6 +28,7 @@ public class AgenteAStar extends AbstractPlayer {
 	int portal_x;
 	int portal_y;
 	int avatar_coordenadas_x, avatar_coordenadas_y;
+	int limite_mapa_x,limite_mapa_y;
 
 	// ArrayList con el plan a seguir
 	private Queue<Types.ACTIONS> plan = new LinkedList<>();
@@ -75,8 +76,8 @@ public class AgenteAStar extends AbstractPlayer {
 		avatar_coordenadas_x = (int) Math.floor(stateObs.getAvatarPosition().x / fescala.x);
 		avatar_coordenadas_y = (int) Math.floor(stateObs.getAvatarPosition().y / fescala.y);
 		// Límites del mapa
-		int limite_mapa_x = stateObs.getObservationGrid().length;
-		int limite_mapa_y = stateObs.getObservationGrid()[0].length;
+		limite_mapa_x = stateObs.getObservationGrid().length;
+		limite_mapa_y = stateObs.getObservationGrid()[0].length;
 
 		// A priori todo los sitios son visitables, lo indicamos
 		esta_cerrado = new Boolean[limite_mapa_x][limite_mapa_y];
@@ -134,8 +135,8 @@ public class AgenteAStar extends AbstractPlayer {
 	public Boolean esVisitable(int x, int y) {
 		Boolean dentro_mapa = (x >= 0
 				&& y >= 0
-				&& x <= limite_mapa.x
-				&& y <= limite_mapa.y);
+				&& x <= limite_mapa_x
+				&& y <= limite_mapa_y);
 		return dentro_mapa && ( // está dentro del mapa
 		visitable[x][y] == true //
 		);
@@ -183,7 +184,11 @@ public class AgenteAStar extends AbstractPlayer {
 				int sucesor_x = candidato.x + desplazamiento.get(i).get(0);
 				int sucesor_y = candidato.y + desplazamiento.get(i).get(1);
 				// heurística el nodo no ha sido visitado hace dos generaciones
-				boolean no_abuelo = !candidato.coordenadasIguales(candidato.coordenada_padre_x, candidato.coordenada_padre_y);
+				boolean no_abuelo = (
+					sucesor_x !=candidato.coordenada_padre_x 
+					|| 
+					sucesor_y != candidato.coordenada_padre_y
+				);
 				// si se trata de un obstáculo no se considera
 				boolean no_obstaculo = esVisitable(sucesor_x,sucesor_y);
 				// se comprueban condiciones 
