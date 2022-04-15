@@ -82,6 +82,18 @@ public class NodoEstrella implements Comparable<NodoEstrella>{
 			return false;
 	}
     /**
+     *  Compara si son iguales coordenada a coordenada
+     * @param _x
+     * @param _y
+     * @return
+     */
+    public Boolean coordenadasIguales(int _x, int _y) {
+		if(this.x==_x && this.y==_y)
+			return true;
+		else
+			return false;
+	}
+    /**
 	 * Compara un nodo con otro con objeto de ordenarlos
 	 * @param n Nodo con el que comparar
 	 * @return devuelve 0 si son iguales, -1 si this es mayor y 1 en caso contrario
