@@ -47,6 +47,9 @@ public class AgenteDFS extends AbstractPlayer  {
 			Types.ACTIONS.ACTION_UP	
 		)
 	);
+	// Métricas que mostrar en pantalla 
+	int nodos_expandidos = 0;
+	int maximo_nodos_en_memoria = 0;
 	/**
 	 * initialize all variables for the agent
 	 * @param stateObs Observation of the current state.
@@ -166,11 +169,12 @@ public class AgenteDFS extends AbstractPlayer  {
 	 * el plan sea una pila 
 	 * devuelve true si se encuentra 
 	 */
-	private  boolean generarPlanBFS(){
+	private  boolean generarPlanDFS(){
 		NodoSimple posicion_actual = new NodoSimple(
 			avatar_coordenadas.x,
 			avatar_coordenadas.y
 		);
+		int nodos_en_memoria = 1;
 		if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
 			plan = posicion_actual.historialPasos;
 			return true;
@@ -181,11 +185,15 @@ public class AgenteDFS extends AbstractPlayer  {
 		for (NodoSimple n :calculaSucesores(posicion_actual)){
 			pendientesExplorar.push(n);
 			visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+			nodos_en_memoria++;
 		}
+		maximo_nodos_en_memoria = nodos_en_memoria;
 		while ( !pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
 
 			posicion_actual = pendientesExplorar.pop();
-			
+			// Actualizamos métricas 
+			nodos_expandidos++;
+			nodos_en_memoria--;
 			if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
 				plan = posicion_actual.historialPasos;
 				return true;
@@ -194,7 +202,10 @@ public class AgenteDFS extends AbstractPlayer  {
 			for (NodoSimple n :calculaSucesores(posicion_actual)){
 				pendientesExplorar.add(n);
 				visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+				nodos_en_memoria++;
 			}
+			// Actualizamos métrica
+			maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);
 		}
 		return false; 
 	}
@@ -208,9 +219,19 @@ public class AgenteDFS extends AbstractPlayer  {
 	public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
         if(planCalculado  == false) {
-        	//Llamamos al plan con la información del lugar dónde se encuentran los muros
-        	planCalculado = generarPlanBFS();
-			System.out.print(plan);
+        	long tiempo_inicio = System.nanoTime();
+        	planCalculado = generarPlanDFS();
+        	long tiempo_fin = System.nanoTime();
+			//calculamos tiempo de ejecución
+    		double runtime = (double)((tiempo_fin - tiempo_inicio))/1000000;
+    		//Calculamos el tamaño del plan
+    		int tam_plan = plan.size();
+
+			//Mostramos los valores para rellenar la tabla
+        	System.out.println("Runtime: "+runtime);
+        	System.out.println("Tamaño ruta calculada: "+tam_plan);
+        	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
+        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
     		return plan.poll();
         }else {
     		return plan.poll();
