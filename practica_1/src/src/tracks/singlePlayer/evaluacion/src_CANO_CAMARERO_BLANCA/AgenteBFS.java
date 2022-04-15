@@ -98,7 +98,7 @@ public class AgenteBFS extends AbstractPlayer  {
  				
              visitable[x][y]=false;
          }  
-		// añadimos desplazamientos a calcular 
+		// Inicializamos desplazamientos a calcular 
 		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
 		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
 		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
