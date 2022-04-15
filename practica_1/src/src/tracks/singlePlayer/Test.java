@@ -1,6 +1,8 @@
 package tracks.singlePlayer;
 
+import java.util.List;
 import java.util.Random;
+import java.util.Vector;
 
 import core.logging.Logger;
 import tools.Utils;
@@ -39,7 +41,7 @@ public class Test {
 
 		// Game and level to play
 		int gameIdx = 58;
-		int levelIdx = 8; // level names from 0 to 4 (game_lvlN.txt).
+		int levelIdx = 5; // level names from 0 to 4 (game_lvlN.txt).
 		// a partir 100 son los mío 
 		// dle 5 al 8 son los del examen 
 		// se añaden en la carpeta gridphysics
@@ -58,10 +60,27 @@ public class Test {
 		// CAMBIAR AQUÍ LO DE CAMBIAR EL NIVEL 
 		// 2. This plays a game in a level by the controller.
 		
-		ArcadeMachine.runOneGame(game, level1, visuals, AStarController, recordActionsFile, seed, 0);
+		//ArcadeMachine.runOneGame(game, level1, visuals, AStarController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
+
+		// MI CÓDIGO PARA RECORRER TODOS LOS NIVELES
+	String []controladores = new String[]{BFSController/*,DFSController,AStarController*/};
+		for(String controladora : controladores){
+			for(int level_id = 5; level_id <= 8; level_id++){
+				System.out.println("------------------------------");
+				System.out.println("Controladora : "+ controladora);
+				String level = game.replace(gameName, gameName + "_lvl" + level_id);
+				System.out.println("------------------------------");
+				System.out.println("Level: "+ level);
+				ArcadeMachine.runOneGame(game, level, false, controladora, recordActionsFile, seed, 0);
+				System.out.println("------------------------------");
+
+
+			}
+		}
+		
 
 
 		// 3. This replays a game from an action file previously recorded

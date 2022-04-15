@@ -18,7 +18,7 @@ import tools.Vector2d;
  * Resuelve el mapa implementando el método de búsqueda en anchura 
  */
 public class AgenteBFS extends AbstractPlayer  {
-    public int num_actions;
+  
     public Types.ACTIONS[] actions;
 	Vector2d fescala;
 	Vector2d avatar_coordenadas;
@@ -29,7 +29,7 @@ public class AgenteBFS extends AbstractPlayer  {
 	//ArrayList con el plan a seguir
 	private Queue<Types.ACTIONS> plan = new LinkedList<>();
 
-    // True si el nodo se puede explorar, false si no, 
+    // Almacena los obstáculos, True si el nodo se puede explorar, false si no, 
 	//si no está en el diccionario también se podrá visitar
     private Boolean [][] visitable;
 	
@@ -46,6 +46,10 @@ public class AgenteBFS extends AbstractPlayer  {
 				Types.ACTIONS.ACTION_RIGHT
 			)
 		);
+
+	// Métricas que mostrar en pantalla 
+	int nodos_expandidos = 0;
+	int maximo_nodos_en_memoria = 0;
 	
 	/**
 	 * initialize all variables for the agent
@@ -175,26 +179,36 @@ public class AgenteBFS extends AbstractPlayer  {
 			plan = posicion_actual.historialPasos;
 			return true;
 		}
+		nodos_expandidos++;
 		// se supone que el portal es distinto a la posición inicial 
 		Queue <NodoSimple> pendientesExplorar = new LinkedList<>();
-		
+		int nodos_en_memoria = 1;
 		for (NodoSimple n :calculaSucesores(posicion_actual)){
 			pendientesExplorar.add(n);
 			visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+			nodos_en_memoria++;
 		}
+		maximo_nodos_en_memoria =nodos_en_memoria;
 		while ( !pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
 
 			posicion_actual = pendientesExplorar.poll();
-			
+			// Actualizamos estadísticas de expansión y nodos en memoria
+			nodos_expandidos++;
+			nodos_en_memoria--;
+			// Se comprueba si se ha alcanzado el objetivo
 			if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
 				plan = posicion_actual.historialPasos;
 				return true;
 			}
-			
+			// Calculamos sucesor
 			for (NodoSimple n :calculaSucesores(posicion_actual)){
 				pendientesExplorar.add(n);
-				visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+				visitable[n.x][n.y] = false; // Añadimos que ya se ha añadido a pendientes de explorar
+				nodos_en_memoria++; // cada sucesor nuevo supone un nuevo nodo en memoria
 			}
+			// Actualizamos métrica
+			maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);
+
 		}
 
 		return false; 
@@ -209,9 +223,20 @@ public class AgenteBFS extends AbstractPlayer  {
 	public ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
         if(planCalculado  == false) {
-        	//Llamamos al plan con la información del lugar dónde se encuentran los muros
-        	generarPlanBFS();
-        	planCalculado = true;
+			
+			long tiempo_inicio = System.nanoTime();
+        	planCalculado = generarPlanBFS();
+        	long tiempo_fin = System.nanoTime();
+			//calculamos tiempo de ejecución
+    		double runtime = (double)((tiempo_fin - tiempo_inicio))/1000000;
+    		//Calculamos el tamaño del plan
+    		int tam_plan = plan.size();
+
+			//Mostramos los valores para rellenar la tabla
+        	System.out.println("Runtime: "+runtime);
+        	System.out.println("Tamaño ruta calculada: "+tam_plan);
+        	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
+        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
 
     		return plan.poll();
         }else {
