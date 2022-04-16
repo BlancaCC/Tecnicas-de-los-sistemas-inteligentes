@@ -24,7 +24,7 @@ public class AgenteRTAStar extends AbstractPlayer {
 
     // Variables para Act y métricas
     Boolean planCalculado = false;
-    int runtime = 0;
+    double runtime = 0;
     int tam_plan = 0;
 
     // Variables auxiliares relacionadas con coordenadas 
