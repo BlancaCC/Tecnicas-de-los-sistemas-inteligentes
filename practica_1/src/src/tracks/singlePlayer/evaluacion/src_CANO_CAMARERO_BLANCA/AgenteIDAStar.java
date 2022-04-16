@@ -3,7 +3,11 @@ package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Vector;
+
+import javax.naming.InitialContext;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -21,7 +25,7 @@ public class AgenteIDAStar extends AbstractPlayer {
     int f = 0; // coste estimado de la ruta más barata 
     // valores por defecto 
     int ENCONTRADO = -1; // se usan negativos ya que son distancias que no se darán nunca
-    int  INFINITO = 99999999; // suponemos que esta distancia nunca se dará
+    int  INFINITO = Integer.MAX_VALUE; // suponemos que esta distancia nunca se dará
 
     // Variables para Act y métricas
     Boolean planCalculado = false;
@@ -136,7 +140,7 @@ public class AgenteIDAStar extends AbstractPlayer {
         return (x == portal_x && y == portal_y);
     }
     /**
-     *  Calcula la distancia Manhattan de dos puntos de coordenas, será utilizado como heurística
+     *  Calcula la distancia Manhattan de dos puntos de coordenadas, será utilizado como heurística
      * @param x1
      * @param y1
      * @param x2
@@ -145,7 +149,37 @@ public class AgenteIDAStar extends AbstractPlayer {
      */
     private int distanciaManhattan(int x1, int y1){
         return Math.abs(x1-portal_x) + Math.abs(y1-portal_y); 
-    }  
+    } 
+    /**
+	 * Calcula los sucesores que sean visitables de un nodo
+	 * Un nodo sucesor será visitable si:
+	 * 		1. No se ha visitado con anterioridad
+	 * 		2. No  es un obstáculo 
+	 * 		3. No se sale de los límites del mapa
+	 * Los nodos serán expandidos de acorde al orden: 
+	 * 	arriba, abajo, izquierda, derecha.
+	 * @param nodo
+	 * @return Array con los sucesores en orden de generación 
+	 */
+	public PriorityQueue<NodoEstrella> calcularSucesores(NodoEstrella nodo) {
+
+		PriorityQueue<NodoEstrella> sucesores= new PriorityQueue<>();
+		for(int i=0; i<4; i++) {
+			int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
+			int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
+
+			if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
+    			sucesores.add(
+					new NodoEstrella(coordenada_x_sucesor, coordenada_y_sucesor,
+                    portal_x,portal_y,
+                    nodo, 
+                    acciones.get(i)
+					)
+				);
+			}
+		}		
+		return sucesores;
+	} 
 
     /**
      * Función auxiliar para el algoritmo de IDA Star
@@ -156,25 +190,23 @@ public class AgenteIDAStar extends AbstractPlayer {
      * @param y
      * @return
      */
-    private int buscar(int _g, int cota, int x, int y){
-        int f = _g + distanciaManhattan(x, y);
+    private int buscar(int _g, int cota, NodoEstrella nodo){
+        int f = _g + distanciaManhattan(nodo.x, nodo.y);
         if(f > cota ) return f;
-        if( esObjetivo(x, y) ) return ENCONTRADO;
+        if( esObjetivo(nodo.x, nodo.y) ){
+            plan = nodo.historialPasos;
+            return ENCONTRADO;
+        }
         int minimo = INFINITO;
         // calculamos sucesores 
-        for(int i=0; i<4; i++) {
-			int coordenada_x_sucesor = x + desplazamiento.get(i).get(0);
-			int coordenada_y_sucesor = y + desplazamiento.get(i).get(1);
-            if(esVisitable(coordenada_x_sucesor, coordenada_y_sucesor)){
-                plan.add(acciones.get(i)); // añadimos movimiento a la ruta
-                visitable[coordenada_x_sucesor][coordenada_y_sucesor] = false; // para que no se pueda volver a repetir 
-                // buscamos 
-                int t = buscar(_g+1, cota, x, y);
-                if(t == ENCONTRADO) return ENCONTRADO;
-                if(t < minimo) minimo = t;
-                plan.remove(_g); // el último elemento coincide con el coste
-                visitable[coordenada_x_sucesor][coordenada_y_sucesor] = true;
-            }
+        for(NodoEstrella sucesor : calcularSucesores(nodo)){
+            visitable[sucesor.x][sucesor.y] = false; // para que no se pueda volver a repetir 
+            // buscamos 
+            int t = buscar(_g+1, cota, sucesor);
+            if(t == ENCONTRADO) return ENCONTRADO;
+            if(t < minimo) minimo = t;
+            visitable[sucesor.x][sucesor.y] = true;
+            
         }
         return minimo;
     }
@@ -183,9 +215,11 @@ public class AgenteIDAStar extends AbstractPlayer {
      * @return
      */
     boolean generarPlanIDAStar(){
+        // Primera cota será la heurísticas 
         int cota = distanciaManhattan(avatar_x, avatar_y);
+        NodoEstrella inicial = new NodoEstrella(avatar_x, avatar_y, portal_x, portal_y);
         while(true){
-            int t = buscar(0, cota, avatar_x, avatar_y);
+            int t = buscar(0, cota, inicial);
             if(t == ENCONTRADO) return true;
             else if(t == INFINITO) return false;
             cota = t; // aumentamos cota

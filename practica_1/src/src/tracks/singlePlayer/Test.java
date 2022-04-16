@@ -19,6 +19,7 @@ public class Test {
 		String BFSController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteBFS";
 		String DFSController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteDFS";
 		String AStarController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteAStar";
+		String IDAStarController = "tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA.AgenteIDAStar";
 
 		// Available tracks:
 		String sampleRandomController = "tracks.singlePlayer.simple.sampleRandom.Agent";
@@ -59,30 +60,28 @@ public class Test {
 
 		// CAMBIAR AQUÍ LO DE CAMBIAR EL NIVEL 
 		// 2. This plays a game in a level by the controller.
-		
+		//ArcadeMachine.runOneGame(game, level1, visuals, IDAStarController , recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, AStarController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
 
 		// MI CÓDIGO PARA RECORRER TODOS LOS NIVELES
-	String []controladores = new String[]{BFSController/*,DFSController,AStarController*/};
+	String []controladores = new String[]{/*BFSController, DFSController, AStarController, */IDAStarController};
 		for(String controladora : controladores){
+			System.out.println("====================================================================");
 			for(int level_id = 5; level_id <= 8; level_id++){
-				System.out.println("------------------------------");
-				System.out.println("Controladora : "+ controladora);
-				String level = game.replace(gameName, gameName + "_lvl" + level_id);
-				System.out.println("------------------------------");
-				System.out.println("Level: "+ level);
-				ArcadeMachine.runOneGame(game, level, false, controladora, recordActionsFile, seed, 0);
-				System.out.println("------------------------------");
-
-
+				if(controladora != IDAStarController || level_id <=7){
+					System.out.println("Controladora : "+ controladora);
+					String level = game.replace(gameName, gameName + "_lvl" + level_id);
+					System.out.println("------------------------------");
+					System.out.println("Level: "+ level);
+					ArcadeMachine.runOneGame(game, level, false, controladora, recordActionsFile, seed, 0);
+					System.out.println("------------------------------");
+				}
 			}
 		}
 		
-
-
 		// 3. This replays a game from an action file previously recorded
 	//	 String readActionsFile = recordActionsFile;
 	//	 ArcadeMachine.replayGame(game, level1, visuals, readActionsFile);
