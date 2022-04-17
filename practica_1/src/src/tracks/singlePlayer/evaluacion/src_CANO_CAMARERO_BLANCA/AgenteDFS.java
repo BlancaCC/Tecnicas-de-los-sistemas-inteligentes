@@ -2,9 +2,11 @@ package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Stack;
 
 import core.game.Observation;
@@ -16,40 +18,47 @@ import tools.ElapsedCpuTimer;
 import tools.Vector2d;
 
 /**
- * Resuelve el mapa implementando el método de búsqueda en anchura 
+ * Resuelve el mapa implementando el método de búsqueda en produndidad
  */
 public class AgenteDFS extends AbstractPlayer  {
-    public int num_actions;
-    public Types.ACTIONS[] actions;
+
+	// Situación del agente y meta
+	Coordenadas avatar;
+	Coordenadas portal;
+
 	Vector2d fescala;
 	Vector2d avatar_coordenadas;
 	Boolean planCalculado = false;
 	int portal_x ;
 	int portal_y;
 	
-	//ArrayList con el plan a seguir
-	private Queue<Types.ACTIONS> plan = new LinkedList<>();
+	//Cola con el plan a seguir
+	private Queue<ACTIONS> plan = new LinkedList<>();
 
     // True si el nodo se puede explorar, false si no, 
 	//si no está en el diccionario también se podrá visitar
     private Boolean [][] visitable;
+	// Si un par de coordenadas pertenecen aquí no serán visitables
+	// ya sea por ser un obstáculo o por haberse visitado con anterioridad
+	Set<Coordenadas> noVisitable= new HashSet<>();
+
 	
 	// límites superiores del mapa 
 	Vector2d limite_mapa; 
 
-	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
-	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
-	ArrayList<Types.ACTIONS> acciones = new ArrayList<>(
-		List.of(
-			Types.ACTIONS.ACTION_RIGHT,
-			Types.ACTIONS.ACTION_LEFT,
-			Types.ACTIONS.ACTION_DOWN,
-			Types.ACTIONS.ACTION_UP	
-		)
-	);
 	// Métricas que mostrar en pantalla 
 	int nodos_expandidos = 0;
 	int maximo_nodos_en_memoria = 0;
+	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
+	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
+	ArrayList<ACTIONS> acciones = new ArrayList<>(
+		List.of(
+			ACTIONS.ACTION_RIGHT,
+			ACTIONS.ACTION_LEFT,
+			ACTIONS.ACTION_DOWN,
+			ACTIONS.ACTION_UP	
+		)
+	);
 	/**
 	 * initialize all variables for the agent
 	 * @param stateObs Observation of the current state.
@@ -64,14 +73,17 @@ public class AgenteDFS extends AbstractPlayer  {
         ArrayList<Observation>[] posiciones = stateObs.getPortalsPositions(stateObs.getAvatarPosition());
         //Seleccionamos coordenadas del Portal
         Vector2d portal_coordenadas= posiciones[0].get(0).position;
-        portal_x = (int) Math.floor(portal_coordenadas.x / fescala.x);
-		portal_y = (int) Math.floor(portal_coordenadas.y / fescala.y);
+		portal = new Coordenadas(
+			(int) Math.floor(portal_coordenadas.x / fescala.x),
+			(int) Math.floor(portal_coordenadas.y / fescala.y)
+		);
 		
 		//Posición del avatar en coordenadas
-        avatar_coordenadas = new Vector2d( 
-			stateObs.getAvatarPosition().x / fescala.x,
-      		stateObs.getAvatarPosition().y / fescala.y
+        avatar = new Coordenadas( 
+			(int) Math.floor(stateObs.getAvatarPosition().x / fescala.x),
+			(int) Math.floor(stateObs.getAvatarPosition().y / fescala.y)
 		);
+		/** 
 		// Límites del mapa 
 		limite_mapa = new Vector2d(
 			stateObs.getObservationGrid().length - 1,
@@ -84,18 +96,20 @@ public class AgenteDFS extends AbstractPlayer  {
 		for(int x = 0; x <= limite_mapa.x; x++){
 			Arrays.fill(visitable[x], true );
 		}
+		*/
 		// Marcamos lo muros y trampas 
-
          //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
          ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
-		 int x,y; 
+
          for (int j=0; j <=1; j++) // muros y pinchos
          for (int i = 0; i < obstaculos[j].size(); i++){
-             //Obtenemos la posición de cada uno
- 				x = (int)Math.floor(obstaculos[j].get(i).position.x / fescala.x);
-             	y = (int)Math.floor(obstaculos[j].get(i).position.y / fescala.y);
- 				
-             visitable[x][y]=false;
+            //Obtenemos la posición de cada uno
+			noVisitable.add(
+				new Coordenadas(
+					(int)Math.floor(obstaculos[j].get(i).position.x / fescala.x),
+					(int)Math.floor(obstaculos[j].get(i).position.y / fescala.y)
+			 	)
+			);
          } 
 		// añadimos desplazamientos a calcular  (notemos que el orden de lectura será el de abajo arriba)
 		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
@@ -120,18 +134,15 @@ public class AgenteDFS extends AbstractPlayer  {
 	 * Devuelve si la casilla de coordenadas x e y es visitable
 	 * @param coordenadas 
 	 * @return si es visitable o no
+	 * No vamos a comprobar si se sale del límite del mapa ya que ese caso nunca se dará
+	 * por las circunstancias
 	 */
-	public Boolean esVisitable(int x, int y){
-		Boolean dentro_mapa = (x >= 0 
-		&& y >= 0 
-		&& x <= limite_mapa.x
-		&& y <= limite_mapa.y
-		);
-		return dentro_mapa && ( // está dentro del mapa 
-			visitable[x][y]==true // 
-		);
+	public Boolean esVisitable(Coordenadas c){
+		return !noVisitable.contains(c);
 	}
-
+	public Boolean portalAlcanzado(NodoSimple n){
+		return n.c.equals(portal);
+	}
 	/**
 	 * Calcula los sucesores que sean visitables de un nodo
 	 * Un nodo sucesor será visitable si:
@@ -147,13 +158,15 @@ public class AgenteDFS extends AbstractPlayer  {
 
 		ArrayList<NodoSimple> sucesores= new ArrayList<>();
 		for(int i=0; i<4; i++) {
-			int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
-			int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
+			Coordenadas sucesor = new Coordenadas(
+				nodo.c.x + desplazamiento.get(i).get(0),
+				nodo.c.y + desplazamiento.get(i).get(1)
+			);
 
-			if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
+			if( esVisitable(sucesor)) {
     			sucesores.add(
 					new NodoSimple(
-						coordenada_x_sucesor, coordenada_y_sucesor,
+						sucesor.x, sucesor.y,
 						nodo.historialPasos, 
 						acciones.get(i)
 					)
@@ -165,43 +178,36 @@ public class AgenteDFS extends AbstractPlayer  {
 	/** 
 	 * Genera el plan a seguir 
 	 * lo que hace es añadir el plan a la variable  privada plan 
-	 * El plan se genera mediante una búsqueda en profunidad, es por ello que la estructura que almacena 
+	 * El plan se genera mediante una búsqueda en profundidad, es por ello que la estructura que almacena 
 	 * el plan sea una pila 
 	 * devuelve true si se encuentra 
 	 */
 	private  boolean generarPlanDFS(){
-		NodoSimple posicion_actual = new NodoSimple(
-			avatar_coordenadas.x,
-			avatar_coordenadas.y
-		);
-		int nodos_en_memoria = 1;
-		if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+		NodoSimple posicion_actual = new NodoSimple(avatar);
+		// Si se ha alcanzado el portal
+		if(portalAlcanzado(posicion_actual)){
 			plan = posicion_actual.historialPasos;
 			return true;
 		}
-		// se supone que el portal es distinto a la posición inicial 
+		// Por tratarse de búsqueda en profundidad la estructua de datos es un pila
 		Stack <NodoSimple> pendientesExplorar = new Stack<>();
-		
-		for (NodoSimple n :calculaSucesores(posicion_actual)){
-			pendientesExplorar.push(n);
-			visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
-			nodos_en_memoria++;
-		}
-		maximo_nodos_en_memoria = nodos_en_memoria;
-		while ( !pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
+		pendientesExplorar.add(posicion_actual);
+		int nodos_en_memoria = 1;
+
+		while (!pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
 
 			posicion_actual = pendientesExplorar.pop();
 			// Actualizamos métricas 
 			nodos_expandidos++;
 			nodos_en_memoria--;
-			if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+			if(portalAlcanzado(posicion_actual)){
 				plan = posicion_actual.historialPasos;
 				return true;
 			}
 			
 			for (NodoSimple n :calculaSucesores(posicion_actual)){
 				pendientesExplorar.add(n);
-				visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+				noVisitable.add(n.c);
 				nodos_en_memoria++;
 			}
 			// Actualizamos métrica
