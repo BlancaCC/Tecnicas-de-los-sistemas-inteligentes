@@ -103,9 +103,9 @@ public class AgenteDFS extends AbstractPlayer  {
 	 * @return
 	 */
 	Boolean DFS(Coordenadas inicial){
+		nodos_expandidos++;
 		if(inicial.equals(portal)) return true;
 		// Se expande nodo 
-		nodos_expandidos++;
 		noVisitable.add(inicial);
 		return DFS_search(inicial);
 	}
