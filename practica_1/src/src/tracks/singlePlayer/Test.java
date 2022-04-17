@@ -65,12 +65,12 @@ public class Test {
 		//ArcadeMachine.runOneGame(game, level1, visuals, IDAStarController , recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, AStarController, recordActionsFile, seed, 0);
 		ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
-		//ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
+		ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
 
 		// MI CÓDIGO PARA RECORRER TODOS LOS NIVELES
 	String []controladores = new String[]{BFSController, DFSController, AStarController, IDAStarController, RTAStarController};
-	controladores = new String[]{DFSController};
+	controladores = new String[]{BFSController};
 		for(String controladora : controladores){
 			System.out.println("====================================================================");
 			for(int level_id = 5; level_id <= 8; level_id++){

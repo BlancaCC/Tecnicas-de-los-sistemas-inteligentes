@@ -1,10 +1,11 @@
 package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -19,22 +20,18 @@ import tools.Vector2d;
  */
 public class AgenteBFS extends AbstractPlayer  {
   
-    public Types.ACTIONS[] actions;
-	Vector2d fescala;
-	Vector2d avatar_coordenadas;
-	Boolean planCalculado = false;
-	int portal_x ;
-	int portal_y;
-	
-	//ArrayList con el plan a seguir
+		// Situación del agente y meta
+		Coordenadas avatar;
+		Coordenadas portal;
+		Boolean planCalculado = false; // Si la ruta se conoce ya
+
+	//Cola con el plan a seguir
 	private Queue<Types.ACTIONS> plan = new LinkedList<>();
 
-    // Almacena los obstáculos, True si el nodo se puede explorar, false si no, 
-	//si no está en el diccionario también se podrá visitar
-    private Boolean [][] visitable;
-	
-	// límites superiores del mapa 
-	Vector2d limite_mapa; 
+   // Si un par de coordenadas pertenecen aquí no serán visitables
+	// ya sea por ser un obstáculo o por haberse visitado con anterioridad
+	Set<Coordenadas> noVisitable= new HashSet<>();
+
 
 	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
 	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
@@ -49,7 +46,7 @@ public class AgenteBFS extends AbstractPlayer  {
 
 	// Métricas que mostrar en pantalla 
 	int nodos_expandidos = 0;
-	int maximo_nodos_en_memoria = 0;
+	int nodos_en_memoria = 0;
 	
 	/**
 	 * initialize all variables for the agent
@@ -58,46 +55,38 @@ public class AgenteBFS extends AbstractPlayer  {
 	 */
 	public AgenteBFS(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
 		//Calculamos el factor de escala entre mundos (pixeles -> grid)
-        fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length , 
-        		stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);      
+		Vector2d fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length , 
+        	stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);      
       
         //Se crea una lista de observaciones de portales, ordenada por cercania al avatar
         ArrayList<Observation>[] posiciones = stateObs.getPortalsPositions(stateObs.getAvatarPosition());
         //Seleccionamos coordenadas del Portal
         Vector2d portal_coordenadas= posiciones[0].get(0).position;
-        portal_x = (int) Math.floor(portal_coordenadas.x / fescala.x);
-		portal_y = (int) Math.floor(portal_coordenadas.y / fescala.y);
-		
+		portal = new Coordenadas(
+			(int) Math.floor(portal_coordenadas.x / fescala.x),
+			(int) Math.floor(portal_coordenadas.y / fescala.y)
+		);
 		//Posición del avatar en coordenadas
-        avatar_coordenadas = new Vector2d( 
-			stateObs.getAvatarPosition().x / fescala.x,
-      		stateObs.getAvatarPosition().y / fescala.y
+        avatar = new Coordenadas( 
+			(int) Math.floor(stateObs.getAvatarPosition().x / fescala.x),
+			(int) Math.floor(stateObs.getAvatarPosition().y / fescala.y)
 		);
-		// Límites del mapa 
-		limite_mapa = new Vector2d(
-			stateObs.getObservationGrid().length - 1,
-			stateObs.getObservationGrid()[0].length-1
-		);
-		int limite_mapa_x = stateObs.getObservationGrid().length;
-		int limite_mapa_y = stateObs.getObservationGrid()[0].length;
-        // a priori todo los sitios son visitables, lo indicamos
-		visitable = new Boolean[limite_mapa_x][limite_mapa_y];
-		for(int x = 0; x <= limite_mapa.x; x++){
-			Arrays.fill(visitable[x], true );
-		}
 		// Marcamos lo muros y trampas 
 
-         //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
-         ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
-		 int x,y; 
-         for (int j=0; j <=1; j++) // muros y pinchos
-         for (int i = 0; i < obstaculos[j].size(); i++){
-             //Obtenemos la posición de cada uno
- 				x = (int)Math.floor(obstaculos[j].get(i).position.x / fescala.x);
-             	y = (int)Math.floor(obstaculos[j].get(i).position.y / fescala.y);
- 				
-             visitable[x][y]=false;
-         }  
+		// Marcamos lo muros y trampas 
+        //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
+        ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
+
+        for (int j=0; j <=1; j++) // muros y pinchos
+        for (int i = 0; i < obstaculos[j].size(); i++){
+            //Obtenemos la posición de cada uno
+			noVisitable.add(
+				new Coordenadas(
+					(int)Math.floor(obstaculos[j].get(i).position.x / fescala.x),
+					(int)Math.floor(obstaculos[j].get(i).position.y / fescala.y)
+			 	)
+			);
+        }
 		// Inicializamos desplazamientos a calcular 
 		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
 		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
@@ -120,17 +109,12 @@ public class AgenteBFS extends AbstractPlayer  {
 	/**
 	 * Devuelve si la casilla de coordenadas x e y es visitable
 	 * @param coordenadas 
-	 * @return si es visitable o no
+	 * @return si es visitable o no, ya sea por ser un obstáculo o porque se visitó antes
+	 * No vamos a comprobar si se sale del límite del mapa ya que ese caso nunca se dará
+	 * por las circunstancias
 	 */
-	public Boolean esVisitable(int x, int y){
-		Boolean dentro_mapa = (x >= 0 
-		&& y >= 0 
-		&& x <= limite_mapa.x
-		&& y <= limite_mapa.y
-		);
-		return dentro_mapa && ( // está dentro del mapa 
-			visitable[x][y]==true // 
-		);
+	public Boolean esVisitable(Coordenadas c){
+		return !noVisitable.contains(c);
 	}
 
 	/**
@@ -148,13 +132,14 @@ public class AgenteBFS extends AbstractPlayer  {
 
 		ArrayList<NodoSimple> sucesores= new ArrayList<>();
 		for(int i=0; i<4; i++) {
-			int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
-			int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
-
-			if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
+			Coordenadas sucesor = new Coordenadas(
+				nodo.c.x + desplazamiento.get(i).get(0),
+				nodo.c.y + desplazamiento.get(i).get(1)
+			);
+			if( esVisitable(sucesor)) {
     			sucesores.add(
 					new NodoSimple(
-						coordenada_x_sucesor, coordenada_y_sucesor,
+						sucesor,
 						nodo.historialPasos, 
 						acciones.get(i)
 					)
@@ -172,43 +157,38 @@ public class AgenteBFS extends AbstractPlayer  {
 	 */
 	private  boolean generarPlanBFS(){
 		NodoSimple posicion_actual = new NodoSimple(
-			avatar_coordenadas.x,
-			avatar_coordenadas.y
+			avatar.x,
+			avatar.y
 		);
-		if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+		if(posicion_actual.c.equals(portal)){
 			plan = posicion_actual.historialPasos;
 			return true;
 		}
 		nodos_expandidos++;
 		// se supone que el portal es distinto a la posición inicial 
 		Queue <NodoSimple> pendientesExplorar = new LinkedList<>();
-		int nodos_en_memoria = 1;
 		for (NodoSimple n :calculaSucesores(posicion_actual)){
 			pendientesExplorar.add(n);
-			visitable[n.x][n.y] = false; // Añadimos que ya se ha explorado
+			noVisitable.add(n.c);
 			nodos_en_memoria++;
 		}
-		maximo_nodos_en_memoria =nodos_en_memoria;
 		while ( !pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
 
 			posicion_actual = pendientesExplorar.poll();
 			// Actualizamos estadísticas de expansión y nodos en memoria
-			nodos_expandidos++;
-			nodos_en_memoria--;
 			// Se comprueba si se ha alcanzado el objetivo
-			if(posicion_actual.x == portal_x && posicion_actual.y == portal_y){
+			if(posicion_actual.c.equals(portal)){
 				plan = posicion_actual.historialPasos;
 				return true;
 			}
+			nodos_expandidos++;
 			// Calculamos sucesor
 			for (NodoSimple n :calculaSucesores(posicion_actual)){
 				pendientesExplorar.add(n);
-				visitable[n.x][n.y] = false; // Añadimos que ya se ha añadido a pendientes de explorar
+				noVisitable.add(n.c); // Añadimos que ya se ha añadido a pendientes de explorar
 				nodos_en_memoria++; // cada sucesor nuevo supone un nuevo nodo en memoria
 			}
 			// Actualizamos métrica
-			maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);
-
 		}
 
 		return false; 
@@ -236,7 +216,7 @@ public class AgenteBFS extends AbstractPlayer  {
         	System.out.println("Runtime: "+runtime);
         	System.out.println("Tamaño ruta calculada: "+tam_plan);
         	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
-        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
+        	System.out.println("Máximo número de nodos en memoria: "+nodos_en_memoria);
 
     		return plan.poll();
         }else {
