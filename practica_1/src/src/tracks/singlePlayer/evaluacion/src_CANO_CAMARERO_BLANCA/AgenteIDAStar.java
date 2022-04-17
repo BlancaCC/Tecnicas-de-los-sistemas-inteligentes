@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Vector;
-
-import javax.naming.InitialContext;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -31,7 +28,6 @@ public class AgenteIDAStar extends AbstractPlayer {
     Boolean planCalculado = false;
     int nodos_expandidos = 0;
     int nodos_en_memoria = 0;
-    int maximo_nodos_en_memoria = 0; 
 
     // Variables auxiliares relacionadas con coordenadas 
     Boolean [][] visitable; // almacenará obstáculos 
@@ -150,43 +146,10 @@ public class AgenteIDAStar extends AbstractPlayer {
     private int distanciaManhattan(int x1, int y1){
         return Math.abs(x1-portal_x) + Math.abs(y1-portal_y); 
     } 
-    /**
-	 * Calcula los sucesores que sean visitables de un nodo
-	 * Un nodo sucesor será visitable si:
-	 * 		1. No se ha visitado con anterioridad
-	 * 		2. No  es un obstáculo 
-	 * 		3. No se sale de los límites del mapa
-	 * Los nodos serán expandidos de acorde al orden: 
-	 * 	arriba, abajo, izquierda, derecha.
-	 * @param nodo
-	 * @return Array con los sucesores en orden de generación.
-	 */
-	public PriorityQueue<NodoEstrella> calcularSucesores(NodoEstrella nodo) {
-
-		PriorityQueue<NodoEstrella> sucesores= new PriorityQueue<>();
-		for(int i=0; i<4; i++) {
-			int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
-			int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
-
-			if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
-    			sucesores.add(
-					new NodoEstrella(coordenada_x_sucesor, coordenada_y_sucesor,
-                    portal_x,portal_y,
-                    nodo, 
-                    acciones.get(i)
-					)
-				);
-                nodos_en_memoria++;
-			}
-		}
-        // actualizamos el número de nodos en memoria 
-        maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);		
-		return sucesores;
-	} 
-
+    
     /**
      * Función auxiliar para el algoritmo de IDA Star
-     * Es la que genera los sucerores y va explorando el algoritmo 
+     * Es la que genera los sucesores y va explorando el algoritmo 
      * @param g
      * @param cota
      * @param x
@@ -196,22 +159,46 @@ public class AgenteIDAStar extends AbstractPlayer {
     private int buscar(int _g, int cota, NodoEstrella nodo){
         int f = _g + distanciaManhattan(nodo.x, nodo.y);
         if(f > cota ) return f;
+        // expandimos nodo
+        nodos_expandidos++;
         if( esObjetivo(nodo.x, nodo.y) ){
             plan = nodo.historialPasos;
             return ENCONTRADO;
         }
         int minimo = INFINITO;
-        // expandimos nodo
-        nodos_expandidos++;
         // calculamos sucesores 
-        for(NodoEstrella sucesor : calcularSucesores(nodo)){
-            visitable[sucesor.x][sucesor.y] = false; // para que no se pueda volver a repetir 
-            // buscamos 
-            int t = buscar(_g+1, cota, sucesor);
-            if(t == ENCONTRADO) return ENCONTRADO;
-            if(t < minimo) minimo = t;
-            visitable[sucesor.x][sucesor.y] = true;
-            nodos_en_memoria--; 
+       NodoEstrella sucesor;
+        // la distancia al moverse un paso cambiará 1 unidad, 
+        // el cambio será -1 (disminuye y tienen preferencia) +1 aumenta y no
+        // es necesario calcularlo así para no generar los nodos antes
+        for(int caso= -1; caso <= 1; caso+=2){
+            for(int i=0; i<4; i++) {
+                int coordenada_x_sucesor = nodo.x + desplazamiento.get(i).get(0);
+                int coordenada_y_sucesor = nodo.y + desplazamiento.get(i).get(1);
+                if(distanciaManhattan(coordenada_x_sucesor, coordenada_y_sucesor)-
+                    distanciaManhattan(nodo.x, nodo.y)
+                    == caso
+                )
+                    if( esVisitable(coordenada_x_sucesor , coordenada_y_sucesor )) {
+                        // creamos nodo 
+                        nodos_en_memoria++;
+                        sucesor = new NodoEstrella(
+                            coordenada_x_sucesor, coordenada_y_sucesor,
+                            portal_x,portal_y,
+                            nodo, 
+                            acciones.get(i)
+                            );
+                          
+                        visitable[sucesor.x][sucesor.y] = false; // para que no se pueda volver a repetir 
+                        // buscamos 
+                        int t = buscar(_g+1, cota, sucesor);
+                        if(t == ENCONTRADO) return ENCONTRADO;
+                        if(t < minimo) minimo = t;
+                        visitable[sucesor.x][sucesor.y] = true;
+                        nodos_en_memoria--;
+                        
+                }
+            }
         }
         return minimo;
     }
@@ -225,7 +212,6 @@ public class AgenteIDAStar extends AbstractPlayer {
         NodoEstrella inicial = new NodoEstrella(avatar_x, avatar_y, portal_x, portal_y);
         // Se genera el primer nodo en memoria 
         nodos_en_memoria++;
-        maximo_nodos_en_memoria++;
         while(true){
             int t = buscar(0, cota, inicial);
             if(t == ENCONTRADO) return true;
@@ -255,7 +241,7 @@ public class AgenteIDAStar extends AbstractPlayer {
         	System.out.println("Runtime: "+runtime);
         	System.out.println("Tamaño ruta calculada: "+tam_plan);
         	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
-        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
+        	System.out.println("Máximo número de nodos en memoria: "+nodos_en_memoria);
             // leemos el primero y enviamos
             ACTIONS accion = plan.firstElement(); 
             plan.remove(0);
