@@ -38,12 +38,12 @@ public class Test {
 		String[][] games = Utils.readGames(spGamesCollection);
 
 		//Game settings
-		boolean visuals = true;
+		boolean visuals = false;
 		int seed = new Random().nextInt();
 
 		// Game and level to play
 		int gameIdx = 58;
-		int levelIdx = 6; // level names from 0 to 4 (game_lvlN.txt).
+		int levelIdx = 4; // level names from 0 to 4 (game_lvlN.txt).
 		// a partir 100 son los mío 
 		// dle 5 al 8 son los del examen 
 		// se añaden en la carpeta gridphysics
@@ -64,12 +64,13 @@ public class Test {
 		//ArcadeMachine.runOneGame(game, level1, visuals, RTAStarController , recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, IDAStarController , recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, AStarController, recordActionsFile, seed, 0);
-		//ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
+		ArcadeMachine.runOneGame(game, level1, visuals, DFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, BFSController, recordActionsFile, seed, 0);
 		//ArcadeMachine.runOneGame(game, level1, visuals, sampleRandomController, recordActionsFile, seed, 0);
 
 		// MI CÓDIGO PARA RECORRER TODOS LOS NIVELES
-	String []controladores = new String[]{/*BFSController, DFSController, AStarController, IDAStarController, */RTAStarController};
+	String []controladores = new String[]{BFSController, DFSController, AStarController, IDAStarController, RTAStarController};
+	controladores = new String[]{DFSController};
 		for(String controladora : controladores){
 			System.out.println("====================================================================");
 			for(int level_id = 5; level_id <= 8; level_id++){
@@ -78,7 +79,7 @@ public class Test {
 					String level = game.replace(gameName, gameName + "_lvl" + level_id);
 					System.out.println("------------------------------");
 					System.out.println("Level: "+ level);
-					ArcadeMachine.runOneGame(game, level, true, controladora, recordActionsFile, seed, 0);
+					ArcadeMachine.runOneGame(game, level, false, controladora, recordActionsFile, seed, 0);
 					System.out.println("------------------------------");
 				}
 			}

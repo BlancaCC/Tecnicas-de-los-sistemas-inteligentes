@@ -25,38 +25,25 @@ public class AgenteDFS extends AbstractPlayer  {
 	// Situación del agente y meta
 	Coordenadas avatar;
 	Coordenadas portal;
+	Boolean planCalculado = false; // Si la ruta se conoce ya
+	//Pila con el plan a seguir
+	private Stack<ACTIONS> plan = new Stack<>();
 
-	Vector2d fescala;
-	Vector2d avatar_coordenadas;
-	Boolean planCalculado = false;
-	int portal_x ;
-	int portal_y;
-	
-	//Cola con el plan a seguir
-	private Queue<ACTIONS> plan = new LinkedList<>();
-
-    // True si el nodo se puede explorar, false si no, 
-	//si no está en el diccionario también se podrá visitar
-    private Boolean [][] visitable;
 	// Si un par de coordenadas pertenecen aquí no serán visitables
 	// ya sea por ser un obstáculo o por haberse visitado con anterioridad
 	Set<Coordenadas> noVisitable= new HashSet<>();
 
-	
-	// límites superiores del mapa 
-	Vector2d limite_mapa; 
-
 	// Métricas que mostrar en pantalla 
 	int nodos_expandidos = 0;
-	int maximo_nodos_en_memoria = 0;
-	// Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
+
+	//Creamos vectores auxiliares para simplificar proceso  de cálculo de sucesores 
 	ArrayList<ArrayList<Integer>> desplazamiento = new ArrayList<>();
-	ArrayList<ACTIONS> acciones = new ArrayList<>(
+	ArrayList<Types.ACTIONS> acciones = new ArrayList<>(
 		List.of(
-			ACTIONS.ACTION_RIGHT,
-			ACTIONS.ACTION_LEFT,
-			ACTIONS.ACTION_DOWN,
-			ACTIONS.ACTION_UP	
+			Types.ACTIONS.ACTION_UP,
+			Types.ACTIONS.ACTION_DOWN,
+			Types.ACTIONS.ACTION_LEFT,
+			Types.ACTIONS.ACTION_RIGHT
 		)
 	);
 	/**
@@ -66,7 +53,7 @@ public class AgenteDFS extends AbstractPlayer  {
 	 */
 	public AgenteDFS(StateObservation stateObs, ElapsedCpuTimer elapsedTimer){
 		//Calculamos el factor de escala entre mundos (pixeles -> grid)
-        fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length , 
+        Vector2d fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length , 
         		stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);      
       
         //Se crea una lista de observaciones de portales, ordenada por cercania al avatar
@@ -77,26 +64,11 @@ public class AgenteDFS extends AbstractPlayer  {
 			(int) Math.floor(portal_coordenadas.x / fescala.x),
 			(int) Math.floor(portal_coordenadas.y / fescala.y)
 		);
-		
 		//Posición del avatar en coordenadas
         avatar = new Coordenadas( 
 			(int) Math.floor(stateObs.getAvatarPosition().x / fescala.x),
 			(int) Math.floor(stateObs.getAvatarPosition().y / fescala.y)
 		);
-		/** 
-		// Límites del mapa 
-		limite_mapa = new Vector2d(
-			stateObs.getObservationGrid().length - 1,
-			stateObs.getObservationGrid()[0].length-1
-		);
-		int limite_mapa_x = stateObs.getObservationGrid().length;
-		int limite_mapa_y = stateObs.getObservationGrid()[0].length;
-        // a priori todo los sitios son visitables, lo indicamos
-		visitable = new Boolean[limite_mapa_x][limite_mapa_y];
-		for(int x = 0; x <= limite_mapa.x; x++){
-			Arrays.fill(visitable[x], true );
-		}
-		*/
 		// Marcamos lo muros y trampas 
          //Obtenemos las posiciones de los muros y pinchos e indicamos que no sean visitados
          ArrayList<Observation>[] obstaculos = stateObs.getImmovablePositions();
@@ -111,109 +83,56 @@ public class AgenteDFS extends AbstractPlayer  {
 			 	)
 			);
          } 
-		// añadimos desplazamientos a calcular  (notemos que el orden de lectura será el de abajo arriba)
-		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha
-		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
+		// añadimos desplazamientos a calcular 
+		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba 
 		desplazamiento.add(new ArrayList<>(List.of(0,1))); // abajo 
-		desplazamiento.add(new ArrayList<>(List.of(0,-1))); // arriba  	
+		desplazamiento.add(new ArrayList<>(List.of(-1,0))); // izquierda 
+		desplazamiento.add(new ArrayList<>(List.of(1,0))); // derecha		
 	}
-
-	/*
-	A continuación construiremos funciones básicas que se encarguen de 
-	1. Llamar a siguiente acción. 
-	2. General plan. 
-	
-	Que cuentan con las funciones auxiliares que se encargarán de  
-	3 Generar sucesores de un nodo.
-	4 Indicar si cierta casilla es visitable.
-
-	Dicho esto escribiremos las respectivas implementación en orden ascendente al expuesto
-	*/
 
 	/**
 	 * Devuelve si la casilla de coordenadas x e y es visitable
 	 * @param coordenadas 
-	 * @return si es visitable o no
+	 * @return si es visitable o no, ya sea por ser un obstáculo o porque se visitó antes
 	 * No vamos a comprobar si se sale del límite del mapa ya que ese caso nunca se dará
 	 * por las circunstancias
 	 */
 	public Boolean esVisitable(Coordenadas c){
 		return !noVisitable.contains(c);
 	}
-	public Boolean portalAlcanzado(NodoSimple n){
-		return n.c.equals(portal);
+	/**
+	 * Algoritmo que para encontrar la ruta en profundidad
+	 * @param inicial
+	 * @return
+	 */
+	Boolean DFS(Coordenadas inicial){
+		if(inicial.equals(portal)) return true;
+		// Se expande nodo 
+		nodos_expandidos++;
+		noVisitable.add(inicial);
+		return DFS_search(inicial);
 	}
 	/**
-	 * Calcula los sucesores que sean visitables de un nodo
-	 * Un nodo sucesor será visitable si:
-	 * 		1. No se ha visitado con anterioridad
-	 * 		2. No  es un obstáculo 
-	 * 		3. No se sale de los límites del mapa
-	 * Los nodos serán expandidos de acorde al orden: 
-	 * 	arriba, abajo, izquierda, derecha.
-	 * @param nodo
-	 * @return Array con los sucesores en orden de generación 
+	 * Algoritmo auxiliar de DFS 
+	 * que genera sucesores y añade el vector al plan si se encuentra
+	 * @param padre
+	 * @return
 	 */
-	public ArrayList<NodoSimple> calculaSucesores(NodoSimple nodo) {
-
-		ArrayList<NodoSimple> sucesores= new ArrayList<>();
-		for(int i=0; i<4; i++) {
+	Boolean DFS_search(Coordenadas padre){
+		// Generamos sucesores 
+		for(int i= 0; i<4; i++) {
 			Coordenadas sucesor = new Coordenadas(
-				nodo.c.x + desplazamiento.get(i).get(0),
-				nodo.c.y + desplazamiento.get(i).get(1)
+				padre.x + desplazamiento.get(i).get(0),
+				padre.y + desplazamiento.get(i).get(1)
 			);
-
 			if( esVisitable(sucesor)) {
-    			sucesores.add(
-					new NodoSimple(
-						sucesor.x, sucesor.y,
-						nodo.historialPasos, 
-						acciones.get(i)
-					)
-				);
+				if(DFS(sucesor)){ // si se ha encontrado 
+					plan.push(acciones.get(i)); // añadimos el movimiento que siguió al plan
+					return true;
+				}
 			}
-		}		
-		return sucesores;
-	}
-	/** 
-	 * Genera el plan a seguir 
-	 * lo que hace es añadir el plan a la variable  privada plan 
-	 * El plan se genera mediante una búsqueda en profundidad, es por ello que la estructura que almacena 
-	 * el plan sea una pila 
-	 * devuelve true si se encuentra 
-	 */
-	private  boolean generarPlanDFS(){
-		NodoSimple posicion_actual = new NodoSimple(avatar);
-		// Si se ha alcanzado el portal
-		if(portalAlcanzado(posicion_actual)){
-			plan = posicion_actual.historialPasos;
-			return true;
 		}
-		// Por tratarse de búsqueda en profundidad la estructua de datos es un pila
-		Stack <NodoSimple> pendientesExplorar = new Stack<>();
-		pendientesExplorar.add(posicion_actual);
-		int nodos_en_memoria = 1;
-
-		while (!pendientesExplorar.isEmpty()){ // y si quedan nodos que explorar 
-
-			posicion_actual = pendientesExplorar.pop();
-			// Actualizamos métricas 
-			nodos_expandidos++;
-			nodos_en_memoria--;
-			if(portalAlcanzado(posicion_actual)){
-				plan = posicion_actual.historialPasos;
-				return true;
-			}
-			
-			for (NodoSimple n :calculaSucesores(posicion_actual)){
-				pendientesExplorar.add(n);
-				noVisitable.add(n.c);
-				nodos_en_memoria++;
-			}
-			// Actualizamos métrica
-			maximo_nodos_en_memoria = Math.max(nodos_en_memoria, maximo_nodos_en_memoria);
-		}
-		return false; 
+		return false;		
 	}
 	/**
 	 * Return the best action to arrive faster to the closest portal
@@ -226,7 +145,7 @@ public class AgenteDFS extends AbstractPlayer  {
 
         if(planCalculado  == false) {
         	long tiempo_inicio = System.nanoTime();
-        	planCalculado = generarPlanDFS();
+        	planCalculado =DFS(avatar);
         	long tiempo_fin = System.nanoTime();
 			//calculamos tiempo de ejecución
     		double runtime = (double)((tiempo_fin - tiempo_inicio))/1000000;
@@ -237,10 +156,10 @@ public class AgenteDFS extends AbstractPlayer  {
         	System.out.println("Runtime: "+runtime);
         	System.out.println("Tamaño ruta calculada: "+tam_plan);
         	System.out.println("Número de nodos expandidos: "+nodos_expandidos);
-        	System.out.println("Máximo número de nodos en memoria: "+maximo_nodos_en_memoria);
-    		return plan.poll();
+        	System.out.println("Máximo número de nodos en memoria: "+nodos_expandidos);
+    		return plan.pop();
         }else {
-    		return plan.poll();
+    		return plan.pop();
         }   
 		  	
 	}
