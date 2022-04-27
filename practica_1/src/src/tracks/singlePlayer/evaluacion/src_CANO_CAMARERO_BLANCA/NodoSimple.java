@@ -9,34 +9,33 @@ import ontology.Types;
  * usada en los problemas de BFS
  */
 public class NodoSimple {
-    int x,y;
+    Coordenadas c;
     Queue<Types.ACTIONS> historialPasos;
     
     /** Constructor para nodo inicial 
      * coordenadas iniciales x e y 
     */
-    public NodoSimple( int _x, int  _y){
-        this.x = _x;
-        this.y = _y;
+    public NodoSimple( int x, int  y){
+        c = new Coordenadas(x, y);
         this.historialPasos = new LinkedList<Types.ACTIONS>();
         
     }
-    /** Constructor para nodo inicial 
-     * coordenadas iniciales x e y 
-    */
-    public NodoSimple( Double _x, Double  _y){
-        this.x = (int) Math.floor(_x);
-        this.y = (int) Math.floor(_y);
+    public NodoSimple(Coordenadas c){
+        this.c = c;
         this.historialPasos = new LinkedList<Types.ACTIONS>();
         
     }
-
+ 
     /**Constructor  a partir de un antecesor 
      * Coordenadas a
     */
-    public NodoSimple(  int _x, int _y, Queue<Types.ACTIONS> _historialPasos, Types.ACTIONS nuevo_paso){
-        this.x = _x;
-        this.y = _y;
+    public NodoSimple(  int x, int y, Queue<Types.ACTIONS> _historialPasos, Types.ACTIONS nuevo_paso){
+        c = new Coordenadas(x, y);
+        this.historialPasos = new LinkedList<Types.ACTIONS>(_historialPasos);
+        this.historialPasos.add(nuevo_paso); 
+    }
+    public NodoSimple(  Coordenadas c, Queue<Types.ACTIONS> _historialPasos, Types.ACTIONS nuevo_paso){
+        this.c = c;
         this.historialPasos = new LinkedList<Types.ACTIONS>(_historialPasos);
         this.historialPasos.add(nuevo_paso); 
     }

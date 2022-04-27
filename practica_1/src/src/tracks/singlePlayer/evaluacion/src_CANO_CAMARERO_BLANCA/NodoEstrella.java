@@ -2,8 +2,6 @@ package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.Vector;
 
-import javax.swing.text.AsyncBoxView;
-
 import ontology.Types;
 import ontology.Types.ACTIONS;
 
@@ -96,7 +94,7 @@ public class NodoEstrella implements Comparable<NodoEstrella>{
     /**
 	 * Compara un nodo con otro con objeto de ordenarlos
 	 * @param n Nodo con el que comparar
-	 * @return devuelve 0 si son iguales, -1 si this es mayor y 1 en caso contrario
+	 * @return devuelve 0 si son iguales, -1 si this es menor y 1 en caso contrario
      * 
      * El criterio es primer f, en caso de igualdad por las g (la que sea may), y en caso de igualdad por el nodo expandido
 	 */

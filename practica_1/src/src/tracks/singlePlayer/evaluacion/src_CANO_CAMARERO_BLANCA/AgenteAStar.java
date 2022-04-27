@@ -171,7 +171,7 @@ public class AgenteAStar extends AbstractPlayer {
 					return false;
 				}
 				candidato = abiertos.poll();
-				nodos_en_memoria--; // métrica de nodo que se quita
+				nodos_en_memoria--;
 			}while(esta_abierto[candidato.x][candidato.y] == false);
 			nodos_expandidos++; // métrica de que se expande un nodo nuevo
 			// puede producir a error si abierto está vacío 
@@ -226,7 +226,6 @@ public class AgenteAStar extends AbstractPlayer {
 								portal_x, portal_y, candidato, 
 								acciones.get(i))
 							);
-							// métrica nodo en memoria
 							nodos_en_memoria++;
 						}
 					

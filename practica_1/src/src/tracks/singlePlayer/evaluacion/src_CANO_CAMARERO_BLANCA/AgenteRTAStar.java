@@ -1,13 +1,11 @@
 package tracks.singlePlayer.evaluacion.src_CANO_CAMARERO_BLANCA;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.Vector;
 
 import core.game.Observation;
 import core.game.StateObservation;
@@ -98,8 +96,13 @@ public class AgenteRTAStar extends AbstractPlayer {
     /**
      * Los métodos del AgenteRTAStart van encaminados a obtener una ruta a partir del algoritmo RTA*, 
      * para ello se han definido los siguientes métodos: 
-     * Ver si un nodo es visitable 
-     * Realizaremos su implementación en orden de la quinta a la primera. 
+     * - Ver si un nodo es visitable 
+     * - Si se ha alcanzado el objetivo 
+     * - Obtener la heurística (la calcula si no estaba)
+     * - Distancia Manhattan
+     * - Cálculo de sucesores
+     * - Cálculo del plan
+     * Realizaremos su implementación en orden
     */
    
     /**

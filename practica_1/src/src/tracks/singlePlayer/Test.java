@@ -70,7 +70,7 @@ public class Test {
 
 		// MI CÓDIGO PARA RECORRER TODOS LOS NIVELES
 	String []controladores = new String[]{BFSController, DFSController, AStarController, IDAStarController, RTAStarController};
-	controladores = new String[]{IDAStarController};
+	controladores = new String[]{AStarController};
 		for(String controladora : controladores){
 			System.out.println("====================================================================");
 			for(int level_id = 5; level_id <= 8; level_id++){
