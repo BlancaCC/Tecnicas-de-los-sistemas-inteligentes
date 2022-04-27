@@ -22,6 +22,6 @@ constraint sum( i in NUMERO_MONEDAS )(VALOR_MONEDAS[i]*CANTIDAD_MONEDAS[i]) == I
 
 %%%%%%%%%%%% Imprimimos solución en pantalla %%%%%%%%%%%%
 output
-  ["El importe \(IMPORTE) se puede obtener como:\n "] ++
+  ["El importe \(IMPORTE) se puede obtener como:\n"] ++
   ["\(CANTIDAD_MONEDAS[i]) monedas de \(VALOR_MONEDAS[i]) euros \n" | i in NUMERO_MONEDAS];
 solve satisfy;
