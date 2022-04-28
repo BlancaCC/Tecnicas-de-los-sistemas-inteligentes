@@ -8,10 +8,10 @@ include "globals.mzn";
 %%%%%%%%%%%% Declaración de variables  %%%%%%%%%%%%
 %% Estructura de datos que resuelve el problema 
 
-set of int: NUMERO_MONEDAS = 1..2;%8 % número de monedas distintas (hay 8 en total) 
-array [NUMERO_MONEDAS] of float : VALOR_MONEDAS = [0.01, 0.02];
+set of int: NUMERO_MONEDAS = 1..8; % número de monedas distintas (hay 8 en total) 
+array [NUMERO_MONEDAS] of int : VALOR_MONEDAS = [1, 2, 5, 10, 20, 50, 100, 200];
 array [NUMERO_MONEDAS] of var int : CANTIDAD_MONEDAS;
-float : IMPORTE; %% cantidad a buscar 
+int : IMPORTE; %% cantidad a buscar 
 
 %%%%%%%%%%%%% Restricciones  %%%%%%%%%%%%
 
