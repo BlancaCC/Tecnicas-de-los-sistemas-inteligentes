@@ -19,16 +19,28 @@ array [Personas] of var Bebidas: persona_bebida;
 array [Personas] of var 1..5 : numero_casa_persona; 
 
 %%%% Restricciones 
+%0. condición de que la solución debe de ser diferente
+constraint all_different(persona_casa);
+constraint all_different(persona_mascota);
+constraint all_different(persona_profesion);
+constraint all_different(persona_bebida);
+constraint all_different(numero_casa_persona);
+
 % a. El vasco vive en la casa roja
 constraint persona_casa[vasco]==roja;
+
 % b. El catalán tienen un perro 
 constraint persona_mascota[catalan] == perro;
+
 % c. El gallego es pintor
 constraint persona_profesion[gallego]==pintor;
+
 % d. El navarro bebe te
 constraint persona_bebida[navarro]==te;
+
 % e. En andaluz vive en la primera casa de la izquierda 
 constraint numero_casa_persona[andaluz]==1; 
+
 % f. El de la casa verde bebe café 
 constraint forall( p in Personas)( persona_casa[p]== verde <-> persona_bebida[p] == cafe);
 
@@ -37,38 +49,31 @@ constraint forall( p,q in Personas)(
     % identificamos casa verde con su persona y su número
    persona_casa[p]== verde  
    <->
-   % identificamos a la persona que vive en la blanca y su número a la izquierda de la verde
-   (numero_casa_persona[q] == numero_casa_persona[p]+1/\ persona_casa[q]== blanca)
+   % identificamos a la persona que vive en la blanca y su número a la izquierda de la verde (es decir, uno menos)
+   (numero_casa_persona[q] == numero_casa_persona[p]-1/\ persona_casa[q]== blanca)
 );
 
-
-% h. El escultor cria caracores
+% h. El escultor cria caracoles
 constraint forall(p in Personas)(
     persona_profesion[p] == escultor 
     <-> 
     persona_mascota[p] == caracoles
 );
+
 % i. El diplomático vive en la casa amarilla.
 constraint forall(p in Personas)(
     persona_profesion[p] == diplomatico 
     <-> 
     persona_casa[p] == amarilla
 );
+
 % j. En la casa central se bebe leche.
 constraint forall(p in Personas)(
     numero_casa_persona[p] == 3 % 3 es la casa central 
     <-> 
     persona_bebida[p] == leche
 );
-% k. La casa del andaluz está al lado de la azul.
-% ya sabemos por e que el andaluz vive en la primera casa, luego
-%%%% caso en que la casa del andaluz tenga al lado y abajo
-%%%%%%% Caso andaluz en la primera casa 
-constraint forall(p in Personas)(
-    persona_casa[p]==azul
-    <-> 
-    numero_casa_persona[p] == 2
-);
+
 
 
 % l. El violinista bebe zumo.
@@ -78,7 +83,6 @@ constraint forall(p in Personas)(
     persona_bebida[p] == zumo
 );
 % m. El zorro está en una casa al lado de la del médico.
-%%%% caso el zorro esté en medio 
 constraint forall(dueno_zorro, persona_medico  in Personas)(
     persona_mascota[dueno_zorro] == zorro /\ persona_profesion[persona_medico] == medico  
     ->
@@ -92,7 +96,8 @@ constraint forall(dueno_caballo, persona_diplomatico  in Personas)(
     abs(numero_casa_persona[persona_diplomatico] - numero_casa_persona[dueno_caballo]) == 1
 );
 
-%%% Preguntas que resolver 
+
+%%% ----  Preguntas que resolver -----
 % ¿Dónde está la cebra?
 var Casas: casa_cebra; 
 var Personas: dueno_cebra; 
@@ -113,10 +118,11 @@ constraint forall(p in Personas)(
    bebe_agua == p
 );
 
-output
-    ["La cebra está en la casa de color \(casa_cebra) que pertenece al \(dueno_cebra).\n"] ++
-    ["El \(bebe_agua) bebe agua.\n"]
-;
+
+%output
+%    ["La cebra está en la casa de color \(casa_cebra) que pertenece al \(dueno_cebra).\n"] ++
+%    ["El \(bebe_agua) bebe agua.\n"]
+%;
 
 solve satisfy;
 
