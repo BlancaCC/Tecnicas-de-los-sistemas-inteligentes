@@ -16,7 +16,7 @@ array [Personas] of var Mascotas: persona_mascota;
 array [Personas] of var Profesion: persona_profesion;
 array [Personas] of var Bebidas: persona_bebida;
 % almacena el orden de las casa 1 la más a la izquierda 
-array [1..5] of var Personas : numero_casa_persona; 
+array [Personas] of var 1..5 : numero_casa_persona; 
 
 %%%% Restricciones 
 % a. El vasco vive en la casa roja
@@ -27,124 +27,83 @@ constraint persona_mascota[catalan] == perro;
 constraint persona_profesion[gallego]==pintor;
 % d. El navarro bebe te
 constraint persona_bebida[navarro]==te;
-% e. En andaluz vivie en la primera casa de la izquierda 
-constraint numero_casa_persona[1]==andaluz; 
+% e. En andaluz vive en la primera casa de la izquierda 
+constraint numero_casa_persona[andaluz]==1; 
 % f. El de la casa verde bebe café 
-constraint forall( p in Personas)( persona_casa[p]== verde -> persona_bebida[p] == cafe);
+constraint forall( p in Personas)( persona_casa[p]== verde <-> persona_bebida[p] == cafe);
+
 % g. La casa verde está al lado de la blanca y a su derecha 
-constraint forall( p in Personas, q in Personas, i in 1..4)(
-    % sacamos quién vive para obtener la dirección de la casa
-   (persona_casa[p]== verde /\ persona_casa[q]== blanca
-   /\ numero_casa_persona[i] == p)
-   ->
-   % estar a la derecha es estár una dirección desplazada
-   numero_casa_persona[i+1] == q
+constraint forall( p,q in Personas)(
+    % identificamos casa verde con su persona y su número
+   persona_casa[p]== verde  
+   <->
+   % identificamos a la persona que vive en la blanca y su número a la izquierda de la verde
+   (numero_casa_persona[q] == numero_casa_persona[p]+1/\ persona_casa[q]== blanca)
 );
-% h. Es escultor cria caracores
+
+
+% h. El escultor cria caracores
 constraint forall(p in Personas)(
     persona_profesion[p] == escultor 
-    -> 
+    <-> 
     persona_mascota[p] == caracoles
 );
 % i. El diplomático vive en la casa amarilla.
 constraint forall(p in Personas)(
     persona_profesion[p] == diplomatico 
-    -> 
+    <-> 
     persona_casa[p] == amarilla
 );
 % j. En la casa central se bebe leche.
 constraint forall(p in Personas)(
-    numero_casa_persona[3] == p
-    -> 
+    numero_casa_persona[p] == 3 % 3 es la casa central 
+    <-> 
     persona_bebida[p] == leche
 );
 % k. La casa del andaluz está al lado de la azul.
-constraint forall(p in Personas, i in 1..5, j in 1..5)(
-    abs(i-j) == 1  % si las clasas son vecinas 
-    /\
-    numero_casa_persona[i] == andaluz
-    /\
+% ya sabemos por e que el andaluz vive en la primera casa, luego
+%%%% caso en que la casa del andaluz tenga al lado y abajo
+%%%%%%% Caso andaluz en la primera casa 
+constraint forall(p in Personas)(
     persona_casa[p]==azul
-    -> 
-    numero_casa_persona[j] == p 
+    <-> 
+    numero_casa_persona[p] == 2
 );
+
+
 % l. El violinista bebe zumo.
 constraint forall(p in Personas)(
     persona_profesion[p] == violinista
-    -> 
+    <-> 
     persona_bebida[p] == zumo
 );
 % m. El zorro está en una casa al lado de la del médico.
 %%%% caso el zorro esté en medio 
-constraint forall(dueno_zorro in Personas, persona_medico in Personas, i in 2..4)(
-    persona_mascota[dueno_zorro] == zorro
-    /\
-    numero_casa_persona[i] == dueno_zorro
-    /\
-    persona_profesion[persona_medico] == medico
-    -> 
-    numero_casa_persona[i-1] == persona_medico \/  numero_casa_persona[i+1] == persona_medico 
-);
-% caso vive en la casa de la derecha 
-constraint forall(dueno_zorro in Personas, persona_medico in Personas)(
-    persona_mascota[dueno_zorro] == zorro
-    /\
-    numero_casa_persona[5] == dueno_zorro
-    /\
-    persona_profesion[persona_medico] == medico
-    -> 
-    numero_casa_persona[4] == persona_medico
-);
-% caso vive en la casa de la izquierda
-constraint forall(dueno_zorro in Personas, persona_medico in Personas)(
-    persona_mascota[dueno_zorro] == zorro
-    /\
-    numero_casa_persona[1] == dueno_zorro
-    /\
-    persona_profesion[persona_medico] == medico
-    -> 
-    numero_casa_persona[2] == persona_medico
+constraint forall(dueno_zorro, persona_medico  in Personas)(
+    persona_mascota[dueno_zorro] == zorro /\ persona_profesion[persona_medico] == medico  
+    ->
+    abs(numero_casa_persona[persona_medico] - numero_casa_persona[dueno_zorro]) == 1
 );
 
 % n. El caballo está en una casa al lado de la del diplomático.
-constraint forall(dueno_caballo in Personas, persona_diplomatico in Personas, i in 2..4)(
-    persona_mascota[dueno_caballo] == caballo
-    /\
-    numero_casa_persona[i] == dueno_caballo
-    /\
-    persona_profesion[persona_diplomatico] == diplomatico
-    -> 
-    numero_casa_persona[i-1] == persona_diplomatico \/  numero_casa_persona[i+1] == persona_diplomatico 
+constraint forall(dueno_caballo, persona_diplomatico  in Personas)(
+    persona_mascota[dueno_caballo] == caballo /\ persona_profesion[persona_diplomatico] == diplomatico  
+    ->
+    abs(numero_casa_persona[persona_diplomatico] - numero_casa_persona[dueno_caballo]) == 1
 );
-% caso vive en la casa de la derecha 
-constraint forall(dueno_caballo in Personas, persona_diplomatico in Personas)(
-    persona_mascota[dueno_caballo] == caballo
-    /\
-    numero_casa_persona[5] == dueno_caballo
-    /\
-    persona_profesion[persona_diplomatico] == diplomatico
-    -> 
-    numero_casa_persona[4] == persona_diplomatico
-);
-% caso vive en la casa de la izquierda
-constraint forall(dueno_caballo in Personas, persona_diplomatico in Personas)(
-    persona_mascota[dueno_caballo] == caballo
-    /\
-    numero_casa_persona[1] == dueno_caballo
-    /\
-    persona_profesion[persona_diplomatico] == diplomatico
-    -> 
-    numero_casa_persona[2] == persona_diplomatico
-);
+
 %%% Preguntas que resolver 
 % ¿Dónde está la cebra?
 var Casas: casa_cebra; 
+var Personas: dueno_cebra; 
 constraint forall(p in Personas, c in Casas)(
     persona_mascota[p] == cebra
     /\
     persona_casa[p] == c
     -> 
     casa_cebra == c
+    /\
+    dueno_cebra = p
 );
 % ¿Quién bebea agua?
 var Personas : bebe_agua; 
@@ -155,7 +114,7 @@ constraint forall(p in Personas)(
 );
 
 output
-    ["La cebra está en la casa de color \(casa_cebra).\n"] ++
+    ["La cebra está en la casa de color \(casa_cebra) que pertenece al \(dueno_cebra).\n"] ++
     ["El \(bebe_agua) bebe agua.\n"]
 ;
 
