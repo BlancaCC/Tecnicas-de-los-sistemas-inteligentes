@@ -47,10 +47,10 @@ constraint forall( p in Personas)( persona_casa[p]== verde <-> persona_bebida[p]
 % g. La casa verde está al lado de la blanca y a su derecha 
 constraint forall( p,q in Personas)(
     % identificamos casa verde con su persona y su número
-   persona_casa[p]== verde  
-   <->
+   persona_casa[p]== verde  /\ persona_casa[q]== blanca
+   ->
    % identificamos a la persona que vive en la blanca y su número a la izquierda de la verde (es decir, uno menos)
-   (numero_casa_persona[q] == numero_casa_persona[p]-1/\ persona_casa[q]== blanca)
+   (numero_casa_persona[q] == numero_casa_persona[p]-1)
 );
 
 % h. El escultor cria caracoles
@@ -74,7 +74,13 @@ constraint forall(p in Personas)(
     persona_bebida[p] == leche
 );
 
-
+% k. La casa del andaluz está al lado de la azul.
+% ya sabemos por e que el andaluz vive en la primera casa, luego
+constraint forall(p in Personas)(
+    persona_casa[p]==azul
+    -> 
+    abs(numero_casa_persona[p] - numero_casa_persona[andaluz])==1
+);
 
 % l. El violinista bebe zumo.
 constraint forall(p in Personas)(
