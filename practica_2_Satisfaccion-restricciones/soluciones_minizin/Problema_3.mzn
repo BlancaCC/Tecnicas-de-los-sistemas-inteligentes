@@ -125,10 +125,10 @@ constraint forall(p in Personas)(
 );
 
 
-%output
-%    ["La cebra está en la casa de color \(casa_cebra) que pertenece al \(dueno_cebra).\n"] ++
-%    ["El \(bebe_agua) bebe agua.\n"]
-%;
+output
+    ["La cebra está en la casa de color \(casa_cebra) que pertenece al \(dueno_cebra).\n"] ++
+    ["El \(bebe_agua) bebe agua.\n"]
+;
 
 solve satisfy;
 
